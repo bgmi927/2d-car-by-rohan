@@ -339,7 +339,8 @@
         const ROAD_LINE_HEIGHT = 60;
         const ROAD_LINE_GAP = 80; // Gap between road lines
         const COIN_SIZE = 20; // Size of the coin
-        const COIN_VALUE = 10; // Score gained per collected coin
+        const COIN_VALUE = 50; // Score gained per collected coin (Increased from 10 to 50)
+        const COIN_SPAWN_PROBABILITY = 0.03; // Probability for coin frequency (Increased from 0.01 to 0.03)
         const LANE_WIDTH = canvas.width / 3; // Three lanes
 
         // Get UI elements
@@ -651,7 +652,7 @@
             }
 
             // Generate new collectible coins periodically
-            if (Math.random() < 0.01) { // Adjust probability for coin frequency
+            if (Math.random() < COIN_SPAWN_PROBABILITY) { // Adjust probability for coin frequency
                 let lane = Math.floor(Math.random() * 3);
                 let xPos = (lane * (canvas.width / 3)) + ((canvas.width / 3) / 2) - (COIN_SIZE / 2);
                 coins.push(new Coin(
@@ -680,6 +681,7 @@
                 ) {
                     collectedCoins += COIN_VALUE; // Add coin value to collected coins
                     playCoinSound(); // Play coin sound
+                    console.log(`Coin collected! Total coins: ${collectedCoins}`); // Log coin collection
                     return false; // Remove coin if collected
                 }
                 return coin.y < canvas.height; // Remove coin if off-screen
