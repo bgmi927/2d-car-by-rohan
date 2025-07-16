@@ -1,285 +1,924 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Top-Down Car Racing with Enemy Cars</title>
-  <style>
-    body {
-      margin: 0;
-      background: #111;
-      overflow: hidden;
-      touch-action: none;
-      font-family: Arial, sans-serif;
-    }
-    canvas {
-      display: block;
-      margin: auto;
-      background: #222;
-    }
-    .controls {
-      position: fixed;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      z-index: 10;
-    }
-    .btn {
-      width: 60px;
-      height: 60px;
-      font-size: 24px;
-      border-radius: 50%;
-      border: none;
-      background: #444;
-      color: white;
-    }
-    .btn:active {
-      background: #666;
-    }
-    #gameOverOverlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      font-size: 30px;
-      font-weight: bold;
-      text-align: center;
-      padding-top: 200px;
-      z-index: 20;
-    }
-    #restartBtn {
-      margin-top: 20px;
-      font-size: 20px;
-      padding: 10px 20px;
-      cursor: pointer;
-      border: none;
-      background: #28a745;
-      color: white;
-      border-radius: 8px;
-    }
-    #restartBtn:hover {
-      background: #218838;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Race Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        /* General body styling */
+        body {
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            background-color: #2c3e50; /* Dark background */
+            font-family: 'Inter', sans-serif;
+            color: #ecf0f1;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Game container styling */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #34495e;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            max-width: 90%; /* Responsive width */
+            width: 500px; /* Max width for desktop */
+            box-sizing: border-box;
+        }
+
+        /* Canvas styling */
+        canvas {
+            background-color: #7f8c8d; /* Road color */
+            display: block;
+            border-radius: 10px;
+            border: 5px solid #2c3e50;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+            width: 100%; /* Make canvas responsive */
+            height: auto; /* Maintain aspect ratio */
+            max-height: 600px; /* Max height for canvas */
+            touch-action: none; /* Prevent default touch actions like scrolling */
+        }
+
+        /* Score and Coins display */
+        #score-display {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #f1c40f;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            width: 100%;
+        }
+
+        /* Game over message */
+        #game-over-message {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #e74c3c;
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            display: none; /* Hidden by default */
+        }
+
+        /* Button styling */
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            justify-content: center;
+            gap: 15px;
+        }
+
+        button {
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background: linear-gradient(145deg, #2980b9, #3498db);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Message Box Styling */
+        .message-box {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2c3e50;
+            border: 3px solid #3498db;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            text-align: center;
+            color: #ecf0f1;
+            font-size: 1.2em;
+            max-width: 80%;
+        }
+
+        .message-box-content {
+            margin-bottom: 20px;
+        }
+
+        .message-box-button {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .message-box-button:hover {
+            background: linear-gradient(145deg, #c0392b, #e74c3c);
+            transform: translateY(-2px);
+        }
+
+        /* Car Shop Styling */
+        .car-shop { /* Changed class name */
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #34495e;
+            border: 5px solid #2980b9;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            z-index: 1100; /* Higher than message box */
+            text-align: center;
+            color: #ecf0f1;
+            max-width: 90%;
+            width: 600px;
+            box-sizing: border-box;
+            max-height: 90vh; /* Limit height for scrollability */
+            overflow-y: auto; /* Enable scrolling if content overflows */
+        }
+
+        .shop-title {
+            font-size: 2.8em;
+            font-weight: bold;
+            color: #f1c40f;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .shop-coins-display {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 25px;
+            color: #2ecc71;
+        }
+
+        .car-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid */
+            gap: 20px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .car-item {
+            background-color: #2c3e50;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.2s ease;
+        }
+
+        .car-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .car-color-swatch {
+            width: 80px;
+            height: 50px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border: 2px solid #ecf0f1;
+        }
+
+        .car-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .car-price {
+            font-size: 1em;
+            color: #f1c40f;
+            margin-bottom: 15px;
+        }
+
+        .car-item button {
+            width: 100%;
+            padding: 10px;
+            font-size: 0.9em;
+            background: linear-gradient(145deg, #2ecc71, #27ae60);
+        }
+
+        .car-item button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .shop-close-button {
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            padding: 12px 30px;
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+
+        /* Responsive adjustments for shop */
+        @media (max-width: 600px) {
+            .car-shop { /* Changed class name */
+                padding: 20px;
+            }
+            .shop-title {
+                font-size: 2em;
+            }
+            .shop-coins-display {
+                font-size: 1.2em;
+            }
+            .car-list {
+                grid-template-columns: 1fr; /* Single column on small screens */
+            }
+            .car-color-swatch {
+                width: 60px;
+                height: 40px;
+            }
+            .shop-close-button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+        }
+    </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div class="game-container">
+        <div id="score-display">Score: 0 | Coins: 0</div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="game-over-message">Game Over!</div>
+        <div class="button-group">
+            <button id="startButton">Start Game</button>
+            <button id="restartButton" style="display: none;">Restart Game</button>
+            <button id="shopButton">Car Shop</button>
+        </div>
+    </div>
 
-<!-- Mobile Controls -->
-<div class="controls">
-  <button class="btn" id="left">←</button>
-  <button class="btn" id="right">→</button>
-  <button class="btn" id="up">↑</button>
-  <button class="btn" id="down">↓</button>
-</div>
+    <!-- Custom Message Box -->
+    <div id="messageBox" class="message-box">
+        <div class="message-box-content"></div>
+        <button class="message-box-button" onclick="hideMessageBox()">OK</button>
+    </div>
 
-<!-- Game Over Overlay -->
-<div id="gameOverOverlay">
-  Game Over!<br/>
-  <button id="restartBtn">Restart</button>
-</div>
+    <!-- Car Shop Modal -->
+    <div id="carShop" class="car-shop"> <!-- Changed ID and class -->
+        <h2 class="shop-title">Car Shop</h2> <!-- Changed title text -->
+        <div class="shop-coins-display">Your Coins: <span id="currentCoinsDisplay">0</span></div>
+        <div id="carListContainer" class="car-list">
+            <!-- Car items will be dynamically loaded here -->
+        </div>
+        <button id="closeShopButton" class="shop-close-button">Close Shop</button>
+    </div>
 
-<script>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+    <script>
+        // Get the canvas element and its 2D rendering context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-const roadWidth = 200;
-const roadX = (canvas.width - roadWidth) / 2;
-const carWidth = 40;
-const carHeight = 70;
-const lineHeight = 40;
+        // Set initial canvas dimensions (will be adjusted for responsiveness)
+        canvas.width = 400;
+        canvas.height = 600;
 
-let score = 0;
-let gameOver = false;
-let gameSpeed = 3;          // Starting speed
-const maxSpeed = 10;        // Max speed
-const speedIncrement = 0.002; // Speed increase per frame
+        // Game variables
+        let playerCar;
+        let opponentCars = [];
+        let roadLines = [];
+        let coins = []; // Array to hold collectible coins on the road
+        let score = 0; // Driving score
+        let collectedCoins = 0; // Currency for the shop
+        let gameSpeed = 5; // Initial game speed
+        let gameOver = false;
+        let gameStarted = false;
+        let animationFrameId; // To store the requestAnimationFrame ID
+        let gameWasRunningBeforeShop = false; // To track if game was running before shop opened
 
-const car = {
-  x: canvas.width / 2 - carWidth / 2,
-  y: canvas.height - 100,
-  width: carWidth,
-  height: carHeight,
-  speed: 5
-};
+        // Touch control variables
+        let touchStartX = 0;
+        let isDragging = false;
+        const TOUCH_MOVE_SENSITIVITY = 0.5; // Adjust this value for touch movement speed
 
-let keys = {};
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
+        // Constants for game elements
+        const PLAYER_CAR_WIDTH = 50;
+        const PLAYER_CAR_HEIGHT = 80;
+        const OPPONENT_CAR_WIDTH = 50;
+        const OPPONENT_CAR_HEIGHT = 80;
+        const ROAD_LINE_WIDTH = 10;
+        const ROAD_LINE_HEIGHT = 60;
+        const ROAD_LINE_GAP = 80; // Gap between road lines
+        const COIN_SIZE = 20; // Size of the coin
+        const COIN_VALUE = 10; // Score gained per collected coin
+        const LANE_WIDTH = canvas.width / 3; // Three lanes
 
-const directions = ["left", "right", "up", "down"];
-directions.forEach(dir => {
-  const btn = document.getElementById(dir);
-  btn.addEventListener("touchstart", () => keys["Arrow" + dir.charAt(0).toUpperCase() + dir.slice(1)] = true);
-  btn.addEventListener("touchend", () => keys["Arrow" + dir.charAt(0).toUpperCase() + dir.slice(1)] = false);
-});
+        // Get UI elements
+        const scoreDisplay = document.getElementById('score-display');
+        const gameOverMessage = document.getElementById('game-over-message');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const shopButton = document.getElementById('shopButton'); // New shop button
+        const messageBox = document.getElementById('messageBox');
+        const messageBoxContent = messageBox.querySelector('.message-box-content');
 
-// Coin sound
-const coinSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+        // Car Shop UI elements
+        const carShop = document.getElementById('carShop'); // Changed ID
+        const currentCoinsDisplay = document.getElementById('currentCoinsDisplay');
+        const carListContainer = document.getElementById('carListContainer');
+        const closeShopButton = document.getElementById('closeShopButton');
 
-// Images
-const carImage = new Image();
-carImage.src = "car/car.png";
+        // Tone.js Audio Players
+        let coinSynth;
+        let collisionSynth;
+        let purchaseSynth; // New synth for purchase sound
+        let errorSynth; // New synth for error sound
 
-const enemyCarImage = new Image();
-enemyCarImage.src = "car/enemy_car.png"; // Enemy car image, add this file to your car folder
+        // Available cars in the shop
+        const availableCars = [
+            { id: 'red-car', name: 'Red Racer', color: '#e74c3c', price: 200, owned: false },
+            { id: 'blue-car', name: 'Blue Cruiser', color: '#3498db', price: 350, owned: false },
+            { id: 'purple-car', name: 'Purple Comet', color: '#9b59b6', price: 500, owned: false },
+            { id: 'yellow-car', name: 'Yellow Streak', color: '#f1c40f', price: 750, owned: false },
+            { id: 'dark-green-car', name: 'Night Rider', color: '#1a520f', price: 1000, owned: false } // New "good car"
+        ];
 
-let obstacles = [];  // old obstacles removed, will only use enemyCars now
-let enemyCars = [];
-let coins = [];
-let roadOffset = 0;
+        // Function to initialize audio (called on first user interaction)
+        function initAudio() {
+            // Initialize a simple synth for coin collection sound
+            coinSynth = new Tone.Synth({
+                oscillator: {
+                    type: "triangle"
+                },
+                envelope: {
+                    attack: 0.005,
+                    decay: 0.1,
+                    sustain: 0.05,
+                    release: 0.1
+                }
+            }).toDestination();
 
-function createEnemyCar() {
-  if (gameOver) return;
-  const x = roadX + Math.random() * (roadWidth - carWidth);
-  enemyCars.push({ x, y: -70, width: carWidth, height: carHeight, speed: gameSpeed });
-}
+            // Initialize a simple synth for collision sound
+            collisionSynth = new Tone.Synth({
+                oscillator: {
+                    type: "sawtooth"
+                },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.2,
+                    sustain: 0,
+                    release: 0.3
+                }
+            }).toDestination();
 
-function createCoin() {
-  if (gameOver) return;
-  const x = roadX + Math.random() * (roadWidth - 20);
-  coins.push({ x, y: -20, radius: 10, speed: gameSpeed * 0.75 });
-}
+            // Initialize a synth for successful purchase sound
+            purchaseSynth = new Tone.Synth({
+                oscillator: {
+                    type: "sine"
+                },
+                envelope: {
+                    attack: 0.02,
+                    decay: 0.1,
+                    sustain: 0.05,
+                    release: 0.2
+                }
+            }).toDestination();
 
-function drawRoad() {
-  ctx.fillStyle = "#555";
-  ctx.fillRect(roadX, 0, roadWidth, canvas.height);
+            // Initialize a synth for error/not enough coins sound
+            errorSynth = new Tone.Synth({
+                oscillator: {
+                    type: "square"
+                },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.1,
+                    sustain: 0,
+                    release: 0.1
+                }
+            }).toDestination();
+        }
 
-  ctx.strokeStyle = "#fff";
-  ctx.lineWidth = 2;
-  roadOffset += gameSpeed;
-  if (roadOffset >= lineHeight * 2) roadOffset = 0;
+        // Function to play coin sound
+        function playCoinSound() {
+            if (coinSynth) {
+                coinSynth.triggerAttackRelease("C5", "8n"); // A short high note
+            }
+        }
 
-  for (let y = -lineHeight * 2 + roadOffset; y < canvas.height; y += lineHeight * 2) {
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, y);
-    ctx.lineTo(canvas.width / 2, y + lineHeight);
-    ctx.stroke();
-  }
-}
+        // Function to play collision sound
+        function playCollisionSound() {
+            if (collisionSynth) {
+                collisionSynth.triggerAttackRelease("C2", "4n"); // A low, short note
+            }
+        }
 
-function drawCar() {
-  if (carImage.complete) {
-    ctx.drawImage(carImage, car.x, car.y, car.width, car.height);
-  } else {
-    ctx.fillStyle = "red";
-    ctx.fillRect(car.x, car.y, car.width, car.height);
-  }
-}
+        // Function to play purchase sound
+        function playPurchaseSound() {
+            if (purchaseSynth) {
+                purchaseSynth.triggerAttackRelease("E5", "8n", "+0", 0.5); // Higher note for success
+                purchaseSynth.triggerAttackRelease("G5", "8n", "+0.1", 0.5);
+            }
+        }
 
-function drawEnemyCars() {
-  for (let enemy of enemyCars) {
-    if (enemyCarImage.complete) {
-      ctx.drawImage(enemyCarImage, enemy.x, enemy.y, enemy.width, enemy.height);
-    } else {
-      ctx.fillStyle = "blue";
-      ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-    }
-  }
-}
+        // Function to play error sound
+        function playErrorSound() {
+            if (errorSynth) {
+                errorSynth.triggerAttackRelease("C3", "16n"); // A short, low buzz
+            }
+        }
 
-function drawCoins() {
-  ctx.fillStyle = "gold";
-  for (let coin of coins) {
-    ctx.beginPath();
-    ctx.arc(coin.x + coin.radius, coin.y + coin.radius, coin.radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
+        // Function to show custom message box
+        function showMessageBox(message) {
+            messageBoxContent.textContent = message;
+            messageBox.style.display = 'block';
+        }
 
-function update() {
-  if (gameOver) return;
+        // Function to hide custom message box
+        function hideMessageBox() {
+            messageBox.style.display = 'none';
+        }
 
-  // Move player car
-  if (keys["ArrowLeft"] && car.x > roadX) car.x -= car.speed;
-  if (keys["ArrowRight"] && car.x + car.width < roadX + roadWidth) car.x += car.speed;
-  if (keys["ArrowUp"] && car.y > 0) car.y -= car.speed;
-  if (keys["ArrowDown"] && car.y + car.height < canvas.height) car.y += car.speed;
+        // Player Car object
+        class Car {
+            constructor(x, y, width, height, color) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+            }
 
-  // Increase game speed gradually
-  if (gameSpeed < maxSpeed) {
-    gameSpeed += speedIncrement;
-  }
+            // Draw the car on the canvas
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
 
-  // Move enemy cars and coins based on gameSpeed
-  for (let enemy of enemyCars) enemy.y += enemy.speed;
-  for (let coin of coins) coin.y += coin.speed;
+                // Add some basic car details (windows, roof)
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // Darker color for details
+                // Front window
+                ctx.fillRect(this.x + this.width * 0.2, this.y + this.height * 0.1, this.width * 0.6, this.height * 0.2);
+                // Rear window
+                ctx.fillRect(this.x + this.width * 0.2, this.y + this.height * 0.7, this.width * 0.6, this.height * 0.2);
+                // Roof/cabin
+                ctx.fillRect(this.x + this.width * 0.1, this.y + this.height * 0.35, this.width * 0.8, this.height * 0.3);
+            }
 
-  // Remove offscreen enemy cars and coins
-  enemyCars = enemyCars.filter(enemy => enemy.y <= canvas.height);
-  coins = coins.filter(coin => coin.y <= canvas.height);
+            // Update car position (for player car movement)
+            update(dx) {
+                this.x += dx;
+                // Keep car within canvas bounds
+                if (this.x < 0) this.x = 0;
+                if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+            }
+        }
 
-  // Collision with enemy cars
-  for (let enemy of enemyCars) {
-    if (car.x < enemy.x + enemy.width &&
-        car.x + car.width > enemy.x &&
-        car.y < enemy.y + enemy.height &&
-        car.y + car.height > enemy.y) {
-      endGame();
-    }
-  }
+        // Road Line object
+        class RoadLine {
+            constructor(x, y, width, height, color) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+            }
 
-  // Collision with coins
-  for (let i = coins.length - 1; i >= 0; i--) {
-    const coin = coins[i];
-    const dx = (car.x + car.width / 2) - (coin.x + coin.radius);
-    const dy = (car.y + car.height / 2) - (coin.y + coin.radius);
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance < coin.radius + car.width / 2) {
-      coins.splice(i, 1);
-      score++;
-      coinSound.currentTime = 0;
-      coinSound.play();
-    }
-  }
-}
+            // Draw the road line
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
 
-function drawScore() {
-  ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
-  ctx.fillText("Score: " + score, 10, 30);
-}
+            // Update line position (move downwards)
+            update() {
+                this.y += gameSpeed;
+            }
+        }
 
-function endGame() {
-  gameOver = true;
-  document.getElementById("gameOverOverlay").style.display = "block";
-}
+        // Coin object
+        class Coin {
+            constructor(x, y, size, color) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.color = color;
+            }
 
-document.getElementById("restartBtn").addEventListener("click", () => {
-  score = 0;
-  gameOver = false;
-  gameSpeed = 3;
-  car.x = canvas.width / 2 - carWidth / 2;
-  car.y = canvas.height - 100;
-  enemyCars = [];
-  coins = [];
-  document.getElementById("gameOverOverlay").style.display = "none";
-  gameLoop();
-});
+            // Draw the coin (as a circle for simplicity)
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x + this.size / 2, this.y + this.size / 2, this.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
 
-function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawRoad();
-  update();
-  drawCar();
-  drawEnemyCars();
-  drawCoins();
-  drawScore();
-  if (!gameOver) {
-    requestAnimationFrame(gameLoop);
-  }
-}
+                // Add a simple '$' for coin
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Darker color for text
+                ctx.font = `${this.size * 0.8}px Inter`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('$', this.x + this.size / 2, this.y + this.size / 2);
+            }
 
-// Spawn enemy cars and coins periodically
-setInterval(() => { if(!gameOver) createEnemyCar(); }, 1500);
-setInterval(() => { if(!gameOver) createCoin(); }, 1000);
+            // Update coin position (move downwards)
+            update() {
+                this.y += gameSpeed;
+            }
+        }
 
-gameLoop();
-</script>
+        // Initialize game elements
+        function initGame() {
+            // Player car starts in the middle of the bottom
+            playerCar = new Car(
+                canvas.width / 2 - PLAYER_CAR_WIDTH / 2,
+                canvas.height - PLAYER_CAR_HEIGHT - 20,
+                PLAYER_CAR_WIDTH,
+                PLAYER_CAR_HEIGHT,
+                '#27ae60' // Default Green car
+            );
+            // Ensure the default car is marked as owned
+            const defaultCar = availableCars.find(car => car.color === '#27ae60');
+            if (defaultCar) {
+                defaultCar.owned = true;
+            }
+
+
+            opponentCars = [];
+            roadLines = [];
+            coins = []; // Initialize collectible coins array
+            score = 0; // Reset driving score
+            collectedCoins = 0; // Reset collected coins
+            gameSpeed = 5;
+            gameOver = false;
+            gameStarted = false;
+            isDragging = false; // Reset dragging state
+            gameWasRunningBeforeShop = false; // Reset state
+
+            scoreDisplay.textContent = `Score: ${score} | Coins: ${collectedCoins}`;
+            gameOverMessage.style.display = 'none';
+            startButton.style.display = 'block';
+            restartButton.style.display = 'none';
+            shopButton.style.display = 'block'; // Ensure shop button is visible
+
+            // Generate initial road lines
+            for (let i = 0; i < canvas.height / (ROAD_LINE_HEIGHT + ROAD_LINE_GAP); i++) {
+                roadLines.push(new RoadLine(
+                    canvas.width / 2 - ROAD_LINE_WIDTH / 2, // Center line
+                    i * (ROAD_LINE_HEIGHT + ROAD_LINE_GAP) - ROAD_LINE_GAP,
+                    ROAD_LINE_WIDTH,
+                    ROAD_LINE_HEIGHT,
+                    '#f1c40f' // Yellow lines
+                ));
+            }
+
+            // Clear any existing animation frame
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            drawGame(); // Draw initial state
+        }
+
+        // Draw all game elements
+        function drawGame() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw road lines
+            roadLines.forEach(line => line.draw());
+
+            // Draw opponent cars
+            opponentCars.forEach(car => car.draw());
+
+            // Draw coins
+            coins.forEach(coin => coin.draw());
+
+            // Draw player car
+            playerCar.draw();
+        }
+
+        // Update game state
+        function updateGame() {
+            if (gameOver || !gameStarted) return;
+
+            // Update road lines
+            roadLines.forEach(line => {
+                line.y += gameSpeed;
+                // If line goes off screen, reset its position to the top
+                if (line.y > canvas.height) {
+                    line.y = -ROAD_LINE_HEIGHT - ROAD_LINE_GAP;
+                }
+            });
+
+            // Generate new opponent cars periodically
+            if (Math.random() < 0.02) { // Adjust probability for car frequency
+                let lane = Math.floor(Math.random() * 3); // 0, 1, or 2 for three lanes
+                let xPos = (lane * (canvas.width / 3)) + ((canvas.width / 3) / 2) - (OPPONENT_CAR_WIDTH / 2);
+                opponentCars.push(new Car(
+                    xPos,
+                    -OPPONENT_CAR_HEIGHT, // Start off-screen at the top
+                    OPPONENT_CAR_WIDTH,
+                    OPPONENT_CAR_HEIGHT,
+                    `hsl(${Math.random() * 360}, 70%, 50%)` // Random color
+                ));
+            }
+
+            // Generate new collectible coins periodically
+            if (Math.random() < 0.01) { // Adjust probability for coin frequency
+                let lane = Math.floor(Math.random() * 3);
+                let xPos = (lane * (canvas.width / 3)) + ((canvas.width / 3) / 2) - (COIN_SIZE / 2);
+                coins.push(new Coin(
+                    xPos,
+                    -COIN_SIZE, // Start off-screen at the top
+                    COIN_SIZE,
+                    '#ffd700' // Gold color for coins
+                ));
+            }
+
+            // Update opponent cars and remove those off-screen
+            opponentCars = opponentCars.filter(car => {
+                car.y += gameSpeed * 0.8; // Opponent cars move slightly slower or faster than road
+                return car.y < canvas.height;
+            });
+
+            // Update coins and remove those off-screen or collected
+            coins = coins.filter(coin => {
+                coin.y += gameSpeed;
+                // Check for collision with player car
+                if (
+                    playerCar.x < coin.x + coin.size &&
+                    playerCar.x + playerCar.width > coin.x &&
+                    playerCar.y < coin.y + coin.size &&
+                    playerCar.y + playerCar.height > coin.y
+                ) {
+                    collectedCoins += COIN_VALUE; // Add coin value to collected coins
+                    playCoinSound(); // Play coin sound
+                    return false; // Remove coin if collected
+                }
+                return coin.y < canvas.height; // Remove coin if off-screen
+            });
+
+            // Collision detection for opponent cars
+            opponentCars.forEach(opponent => {
+                if (
+                    playerCar.x < opponent.x + opponent.width &&
+                    playerCar.x + playerCar.width > opponent.x &&
+                    playerCar.y < opponent.y + opponent.height &&
+                    playerCar.y + playerCar.height > opponent.y
+                ) {
+                    // Collision detected with opponent car!
+                    playCollisionSound(); // Play collision sound
+                    gameOver = true;
+                    gameOverMessage.style.display = 'block';
+                    startButton.style.display = 'none';
+                    restartButton.style.display = 'block';
+                    shopButton.style.display = 'block'; // Show shop button on game over
+                    cancelAnimationFrame(animationFrameId); // Stop the game loop
+                    showMessageBox(`Game Over! Your final score is: ${score}. You collected ${collectedCoins} coins.`);
+                }
+            });
+
+            // Increase score from driving
+            score += Math.floor(gameSpeed * 0.1); // Score increases based on speed
+            scoreDisplay.textContent = `Score: ${score} | Coins: ${collectedCoins}`;
+
+            // Increase game speed over time
+            gameSpeed += 0.005; // Gradually increase speed
+        }
+
+        // Game loop
+        function animate() {
+            updateGame();
+            drawGame();
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // Event listener for keyboard input
+        document.addEventListener('keydown', (e) => {
+            if (gameStarted && !gameOver && carShop.style.display === 'none') { // Only allow control if shop is closed
+                const moveAmount = 15; // How much the car moves per key press
+                if (e.key === 'ArrowLeft') {
+                    playerCar.update(-moveAmount);
+                } else if (e.key === 'ArrowRight') {
+                    playerCar.update(moveAmount);
+                }
+            }
+        });
+
+        // --- Touch Controls ---
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameStarted && !gameOver && carShop.style.display === 'none') { // Only allow control if shop is closed
+                isDragging = true;
+                touchStartX = e.touches[0].clientX;
+                e.preventDefault(); // Prevent scrolling/zooming
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isDragging && gameStarted && !gameOver && carShop.style.display === 'none') { // Only allow control if shop is closed
+                const touchMoveX = e.touches[0].clientX;
+                const deltaX = touchMoveX - touchStartX;
+                playerCar.update(deltaX * TOUCH_MOVE_SENSITIVITY);
+                touchStartX = touchMoveX; // Update start for continuous movement
+                e.preventDefault(); // Prevent scrolling/zooming
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+        // --- End Touch Controls ---
+
+        // --- Car Shop Functions ---
+        function showShop() {
+            if (!gameOver) { // Only allow opening shop if game is not over
+                gameWasRunningBeforeShop = gameStarted; // Remember if game was running
+                gameStarted = false; // Pause the game
+                cancelAnimationFrame(animationFrameId); // Stop the game loop
+            }
+            carShop.style.display = 'block'; // Changed reference
+            updateShopUI(); // Update shop contents
+        }
+
+        function hideShop() {
+            carShop.style.display = 'none'; // Changed reference
+            if (gameWasRunningBeforeShop) { // Resume game only if it was running before
+                gameStarted = true; // Resume the game
+                animate(); // Restart the game loop
+            }
+        }
+
+        function updateShopUI() {
+            currentCoinsDisplay.textContent = collectedCoins;
+            carListContainer.innerHTML = ''; // Clear previous car items
+
+            availableCars.forEach(car => {
+                const carItem = document.createElement('div');
+                carItem.classList.add('car-item');
+
+                const colorSwatch = document.createElement('div');
+                colorSwatch.classList.add('car-color-swatch');
+                colorSwatch.style.backgroundColor = car.color;
+
+                const carName = document.createElement('div');
+                carName.classList.add('car-name');
+                carName.textContent = car.name;
+
+                const carPrice = document.createElement('div');
+                carPrice.classList.add('car-price');
+                carPrice.textContent = `Price: ${car.price} Coins`;
+
+                const buyButton = document.createElement('button');
+                buyButton.textContent = car.owned ? 'Owned' : 'Buy';
+                buyButton.disabled = car.owned || collectedCoins < car.price;
+
+                if (!car.owned) {
+                    buyButton.addEventListener('click', () => buyCar(car.id, car.color, car.price));
+                } else {
+                    // If owned, allow selecting it as current car if not already
+                    if (playerCar.color !== car.color) {
+                        buyButton.textContent = 'Select';
+                        buyButton.disabled = false;
+                        buyButton.addEventListener('click', () => selectCar(car.color));
+                    } else {
+                        buyButton.textContent = 'Current';
+                        buyButton.disabled = true;
+                    }
+                }
+
+                carItem.appendChild(colorSwatch);
+                carItem.appendChild(carName);
+                carItem.appendChild(carPrice);
+                carItem.appendChild(buyButton);
+                carListContainer.appendChild(carItem);
+            });
+        }
+
+        function buyCar(carId, newColor, price) {
+            const carToBuy = availableCars.find(car => car.id === carId);
+
+            if (carToBuy && collectedCoins >= price && !carToBuy.owned) {
+                collectedCoins -= price;
+                carToBuy.owned = true; // Mark as owned
+                playerCar.color = newColor; // Change player car color
+                playPurchaseSound();
+                updateShopUI(); // Refresh shop UI
+                drawGame(); // Redraw game with new car color
+                scoreDisplay.textContent = `Score: ${score} | Coins: ${collectedCoins}`;
+            } else if (carToBuy && carToBuy.owned) {
+                showMessageBox("You already own this car!");
+                playErrorSound();
+            } else {
+                showMessageBox("Not enough coins to buy this car!");
+                playErrorSound();
+            }
+        }
+
+        function selectCar(newColor) {
+            playerCar.color = newColor;
+            updateShopUI(); // Refresh shop UI to show "Current" on selected car
+            drawGame(); // Redraw game with new car color
+        }
+        // --- End Car Shop Functions ---
+
+
+        // Event listeners for buttons
+        startButton.addEventListener('click', () => {
+            if (!gameStarted) {
+                // Initialize audio context on first user interaction
+                Tone.start();
+                initAudio();
+                gameStarted = true;
+                startButton.style.display = 'none';
+                restartButton.style.display = 'none'; // Hide restart until game over
+                gameOverMessage.style.display = 'none'; // Hide game over message
+                animate(); // Start the game loop
+            }
+        });
+
+        restartButton.addEventListener('click', () => {
+            // Ensure audio context is started if not already
+            Tone.start();
+            initAudio(); // Reinitialize audio synths
+            initGame(); // Reinitialize game state
+            gameStarted = true; // Start the game immediately after restart
+            startButton.style.display = 'none';
+            restartButton.style.display = 'none';
+            gameOverMessage.style.display = 'none';
+            animate(); // Start the game loop
+        });
+
+        shopButton.addEventListener('click', showShop);
+        closeShopButton.addEventListener('click', hideShop);
+
+        // Handle canvas resizing for responsiveness
+        function resizeCanvas() {
+            const container = document.querySelector('.game-container');
+            // Set canvas width to 90% of container width, but not more than 400px
+            canvas.width = Math.min(container.clientWidth * 0.9, 400);
+            // Maintain aspect ratio (e.g., 4:6)
+            canvas.height = (canvas.width / 4) * 6;
+
+            // Recalculate lane width based on new canvas width
+            // Note: This won't perfectly adjust opponent car X positions or coin positions if they are already on screen,
+            // but new elements will spawn correctly. For a perfect resize, existing elements would need their X updated.
+            // LANE_WIDTH is now effectively a local variable in the car/coin generation logic.
+
+            // Re-center player car
+            if (playerCar) {
+                playerCar.x = canvas.width / 2 - playerCar.width / 2;
+                playerCar.y = canvas.height - playerCar.height - 20;
+            }
+
+            // Re-initialize road lines to fit new height
+            roadLines = [];
+            for (let i = 0; i < canvas.height / (ROAD_LINE_HEIGHT + ROAD_LINE_GAP); i++) {
+                roadLines.push(new RoadLine(
+                    canvas.width / 2 - ROAD_LINE_WIDTH / 2,
+                    i * (ROAD_LINE_HEIGHT + ROAD_LINE_GAP) - ROAD_LINE_GAP,
+                    ROAD_LINE_WIDTH,
+                    ROAD_LINE_HEIGHT,
+                    '#f1c40f'
+                ));
+            }
+
+            // Redraw game after resize
+            drawGame();
+        }
+
+        // Initialize game on window load and set up resize listener
+        window.onload = function() {
+            initGame();
+            resizeCanvas(); // Initial resize
+            window.addEventListener('resize', resizeCanvas); // Listen for window resize events
+        };
+    </script>
 </body>
 </html>
